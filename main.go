@@ -9,19 +9,57 @@ import (
 // param w: provides methods for assembling an HTTP response and sending it to a user
 // param r: pointer to a struct that holds info about the current request
 func home(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello"))
+	// since servemux treats the "/" route as a catch-all, we can do this to restrict the route to just "/"
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+		return
+	}
+
+	_, err := w.Write([]byte("Hello"))
+	if err != nil {
+		return
+	}
+}
+
+func snippetView(w http.ResponseWriter, r *http.Request) {
+	_, err := w.Write([]byte("Display a specific snippet..."))
+	if err != nil {
+		return
+	}
+}
+
+func snippetCreate(w http.ResponseWriter, r *http.Request) {
+	// only handle create (POST)
+	if r.Method != "POST" {
+		// give user info about what request methods are available
+		w.Header().Set("Allow", "POST")
+
+		// can only call w.WriteHeader() once per response
+		w.WriteHeader(405)
+
+		// if no WriteHeader call beforehand, w.Write() will automatically send a 200 OK status code
+		_, _ = w.Write([]byte("Method Not Allowed"))
+
+		return
+	}
+
+	_, err := w.Write([]byte("Create a new snippet..."))
+	if err != nil {
+		return
+	}
 }
 
 func main() {
-	// initialize a new servemux
-	// register the home function as a handler for "/" url pattern
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", home)
+	mux.HandleFunc("/", home)                    // with servemux, "/" is a catch-all - acts like a wild card, i.e. /**
+	mux.HandleFunc("/snippet/view", snippetView) // fixed path, will only strictly match
+	mux.HandleFunc("/snippet/create", snippetCreate)
 
-	// start a new web server
-	// two params:
-	// 1.TCP network address to listen on
-	// 2. servemux created above
+	// if you wanted to, you could use:
+	// http.HandleFunc("/", home)
+	// which uses `DefaultServeMux` behind the scenes, which is:
+	// `var DefaultServeMux = NewServeMux()`
+	// avoid this, since it's basically a global var that could be comprised by a third-party package
 	log.Print("Starting server on :4000")
 	err := http.ListenAndServe(":4000", mux)
 	log.Fatal(err)
