@@ -30,15 +30,18 @@ func snippetView(w http.ResponseWriter, r *http.Request) {
 
 func snippetCreate(w http.ResponseWriter, r *http.Request) {
 	// only handle create (POST)
-	if r.Method != "POST" {
+	if r.Method != http.MethodPost {
 		// give user info about what request methods are available
-		w.Header().Set("Allow", "POST")
+		w.Header().Set("Allow", http.MethodPost)
 
-		// can only call w.WriteHeader() once per response
-		w.WriteHeader(405)
+		//// can only call w.WriteHeader() once per response
+		//w.WriteHeader(405)
+		//
+		//// if no WriteHeader call beforehand, w.Write() will automatically send a 200 OK status code
+		//_, _ = w.Write([]byte("Method Not Allowed"))
 
-		// if no WriteHeader call beforehand, w.Write() will automatically send a 200 OK status code
-		_, _ = w.Write([]byte("Method Not Allowed"))
+		// or we can just use this helpful function (calls above methods under the hood):
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 
 		return
 	}
